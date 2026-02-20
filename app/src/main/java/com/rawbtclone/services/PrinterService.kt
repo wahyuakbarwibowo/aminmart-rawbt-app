@@ -70,51 +70,89 @@ class PrinterService : Service() {
     }
 
     private suspend fun handleClient(socket: Socket) = withContext(Dispatchers.IO) {
+        var out: PrintWriter? = null
         try {
             val reader = BufferedReader(InputStreamReader(socket.inputStream))
-            val out = PrintWriter(socket.outputStream)
+            out = PrintWriter(socket.outputStream)
 
             var line: String? = reader.readLine()
             var contentLength = 0
+            
+            // Parse HTTP headers
             while (line != null && line.isNotEmpty()) {
-                if (line.startsWith("Content-Length:")) {
+                if (line.startsWith("Content-Length:", ignoreCase = true)) {
                     contentLength = line.substring(15).trim().toInt()
+                    Log.d("PrinterService", "Content-Length: $contentLength")
                 }
                 line = reader.readLine()
             }
 
+            // Read body
             val body = CharArray(contentLength)
-            reader.read(body, 0, contentLength)
-            val jsonBody = String(body)
+            var bytesRead = 0
+            while (bytesRead < contentLength) {
+                val read = reader.read(body, bytesRead, contentLength - bytesRead)
+                if (read == -1) break
+                bytesRead += read
+            }
+            val jsonBody = String(body, 0, bytesRead)
+            Log.d("PrinterService", "Received body: $jsonBody")
 
-            // Minimal HTTP response
+            // Parse and print first
+            if (jsonBody.isNotEmpty()) {
+                printFromJson(jsonBody)
+            }
+
+            // Send HTTP response after print
             out.println("HTTP/1.1 200 OK")
             out.println("Content-Type: application/json")
             out.println("Connection: close")
             out.println()
             out.println("{\"status\":\"success\"}")
             out.flush()
-            socket.close()
-
-            if (jsonBody.isNotEmpty()) {
-                printFromJson(jsonBody)
-            }
         } catch (e: Exception) {
             Log.e("PrinterService", "Error handling client", e)
+            try {
+                if (out == null) {
+                    out = PrintWriter(socket.outputStream)
+                }
+                out.println("HTTP/1.1 500 Internal Server Error")
+                out.println("Content-Type: application/json")
+                out.println("Connection: close")
+                out.println()
+                out.println("{\"status\":\"error\",\"message\":\"${e.message}\"}")
+                out.flush()
+            } catch (e2: Exception) {
+                Log.e("PrinterService", "Error sending error response", e2)
+            }
+        } finally {
+            try {
+                socket.close()
+            } catch (e: Exception) {
+                Log.e("PrinterService", "Error closing socket", e)
+            }
         }
-        Unit
     }
 
     private fun printFromJson(json: String) {
         val printerManager = PrinterManager.getInstance(this)
         val builder = EscPosBuilder().init()
-        
+
         try {
+            Log.d("PrinterService", "Parsing JSON: $json")
             JsonPrintParser.parseAndBuild(json, builder)
-            
+
             val printData = builder.feed(3).cut().build()
+            Log.d("PrinterService", "Print data size: ${printData.size} bytes")
+            
             CoroutineScope(Dispatchers.Main).launch {
-                printerManager.print(printData) { _, _ -> }
+                printerManager.print(printData) { success, error ->
+                    if (success) {
+                        Log.d("PrinterService", "Print successful")
+                    } else {
+                        Log.e("PrinterService", "Print failed: $error")
+                    }
+                }
             }
         } catch (e: Exception) {
             Log.e("PrinterService", "Print error", e)
