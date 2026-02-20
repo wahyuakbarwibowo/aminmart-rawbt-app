@@ -110,7 +110,7 @@ class MainActivity : AppCompatActivity() {
             .align(EscPosBuilder.ALIGN_CENTER)
             .fontSize(EscPosBuilder.FONT_SIZE_DOUBLE)
             .bold(true)
-            .text("RAWBT CLONE TEST")
+            .text("AMINMART RAWBT TEST")
             .lineBreak()
             .bold(false)
             .fontSize(EscPosBuilder.FONT_SIZE_NORMAL)
