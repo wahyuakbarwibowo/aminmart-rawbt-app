@@ -1,0 +1,59 @@
+# Built application files
+*.apk
+*.ap_
+*.aab
+*.aar
+
+# Files for the ART/Dalvik VM
+*.dex
+
+# Java class files
+*.class
+
+# Generated files
+build/
+.gradle/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Gradle files
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+
+# Keystore files
+*.jks
+*.keystore
+
+# Local configuration files (ideally for IDEs)
+local.properties
+.idea/workspace.xml
+.idea/libraries/
+.idea/caches/
+.idea/dictionaries/
+.idea/modules.xml
+.idea/navEditor.xml
+.idea/render.xml
+
+# macOS specific files
+.DS_Store
+
+# Android Studio specific files
+.navigation/
+
+# Misc
+*.iml
+.flutter-plugins
+.flutter-plugins-dependencies
+.dart_tool
+.flutter-plugin-template/
+.github/
+.vscode/
+
+# Project metadata
+.project
+.settings/
+
+# User-specific files
+.idea/misc.xml
