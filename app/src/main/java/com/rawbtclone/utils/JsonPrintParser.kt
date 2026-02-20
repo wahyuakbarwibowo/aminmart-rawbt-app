@@ -1,25 +1,32 @@
 package com.rawbtclone.utils
 
 import com.google.gson.Gson
+import com.google.gson.JsonSyntaxException
 import com.google.gson.reflect.TypeToken
+import android.util.Log
 
 object JsonPrintParser {
     private val gson = Gson()
+    private const val TAG = "JsonPrintParser"
 
     fun parseAndBuild(json: String, builder: EscPosBuilder) {
         val listType = object : TypeToken<List<Map<String, Any>>>() {}.type
         val commands: List<Map<String, Any>> = try {
-            gson.fromJson(json, listType)
+            val parsed = gson.fromJson<List<Map<String, Any>>>(json, listType)
+            parsed ?: throw JsonSyntaxException("Parsed result is null")
         } catch (e: Exception) {
+            Log.e(TAG, "Failed to parse JSON array, trying single object", e)
             try {
-                val singleItem: Map<String, Any> = gson.fromJson(json, object : TypeToken<Map<String, Any>>() {}.type)
-                listOf(singleItem)
+                val singleItem = gson.fromJson<Map<String, Any>>(json, object : TypeToken<Map<String, Any>>() {}.type)
+                singleItem?.let { listOf(it) } ?: throw JsonSyntaxException("Parsed result is null")
             } catch (e2: Exception) {
-                // Not a valid JSON command, treat as raw text
-                listOf(mapOf("type" to "text", "text" to json, "newline" to true))
+                Log.e(TAG, "Failed to parse JSON object", e2)
+                throw IllegalArgumentException("Invalid JSON format. Expected array or object.")
             }
         }
 
+        Log.d(TAG, "Parsed ${commands.size} commands")
+        
         for (cmd in commands) {
             val align = when (cmd["align"] as? String) {
                 "center" -> EscPosBuilder.ALIGN_CENTER
@@ -47,6 +54,10 @@ object JsonPrintParser {
                 "barcode" -> builder.barcode(text)
                 "qr" -> builder.qrCode(text)
                 "cut" -> builder.cut()
+                else -> {
+                    Log.w(TAG, "Unknown command type: $type, treating as text")
+                    builder.text(type)
+                }
             }
 
             if (cmd["newline"] as? Boolean == true) {

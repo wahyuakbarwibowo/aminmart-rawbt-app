@@ -50,8 +50,7 @@ const printText = () => {
     action: 'com.rawbtclone.PRINT',
     extras: [
       { key: 'type', value: 'text' },
-      { key: 'data', value: 'Hello World!
-This is a test print.' },
+      { key: 'data', value: 'Hello World!\nThis is a test print.' },
     ],
   });
 };
@@ -86,24 +85,134 @@ const printReceipt = () => {
 
 ### 2. Via HTTP Server
 
-The app runs a local server in the background. You can send a POST request to it.
+The app runs a local HTTP server in the background. You can send a POST request to it.
+
+**Important:** The HTTP server expects **JSON format**, NOT raw HTML or plain text. You must parse your HTML/content on the client side and send the result as a JSON array of print commands.
 
 -   **URL**: `http://127.0.0.1:8080/print`
 -   **Method**: `POST`
--   **Body**: The same JSON payload as used in the Intent API.
+-   **Headers**: `Content-Type: application/json`
+-   **Body**: JSON array of command objects (see format below)
+
+#### JSON Command Format
+
+Each command in the array is an object with the following properties:
+
+| Property   | Type      | Required | Description                                      |
+|------------|-----------|----------|--------------------------------------------------|
+| `type`     | String    | Yes      | Command type: `text`, `qr`, `barcode`, `cut`     |
+| `text`     | String    | Yes*     | Content to print (required for text/qr/barcode)  |
+| `align`    | String    | No       | `left` (default), `center`, `right`              |
+| `bold`     | Boolean   | No       | `false` (default) or `true`                      |
+| `size`     | String    | No       | `normal` (default), `double`, `double_height`, `double_width` |
+| `newline`  | Boolean   | No       | `false` (default) or `true` (add line break)     |
 
 #### Example: `curl`
 
 ```bash
-curl -X POST 
-  http://127.0.0.1:8080/print 
-  -H 'Content-Type: application/json' 
+curl -X POST http://127.0.0.1:8080/print \
+  -H 'Content-Type: application/json' \
   -d '[
     {"type": "text", "text": "HTTP Print Test", "align": "center", "bold": true},
     {"type": "text", "text": "This is a test from curl.", "align": "center", "newline": true},
     {"type": "cut"}
   ]'
 ```
+
+#### Example: JavaScript (Fetch API)
+
+```javascript
+const printReceipt = async () => {
+  const response = await fetch('http://127.0.0.1:8080/print', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify([
+      { type: 'text', text: 'TOKO MAJU JAYA', align: 'center', bold: true, size: 'double' },
+      { type: 'text', text: 'Jl. Merdeka No. 123', align: 'center', newline: true },
+      { type: 'text', text: '--------------------------------', newline: true },
+      { type: 'text', text: 'Item 1', align: 'left' },
+      { type: 'text', text: '25.000', align: 'right', newline: true },
+      { type: 'qr', text: 'https://example.com', align: 'center', newline: true },
+      { type: 'cut' }
+    ])
+  });
+  
+  const result = await response.json();
+  console.log(result); // { status: "success" }
+};
+```
+
+#### Example: PHP
+
+```php
+<?php
+$data = [
+    ['type' => 'text', 'text' => 'Receipt #123', 'align' => 'center', 'bold' => true],
+    ['type' => 'text', 'text' => 'Item A - 50.000', 'newline' => true],
+    ['type' => 'cut']
+];
+
+$ch = curl_init('http://127.0.0.1:8080/print');
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+$response = curl_exec($ch);
+curl_close($ch);
+
+echo $response; // {"status":"success"}
+?>
+```
+
+#### ⚠️ HTML to JSON Conversion
+
+**The HTTP server does NOT accept raw HTML.** You must convert your HTML to JSON format on the client side.
+
+**Example conversion:**
+
+```html
+<!-- Your HTML -->
+<div>
+  <h1 style="text-align:center; font-weight:bold;">TOKO MAJU JAYA</h1>
+  <p style="text-align:center;">Jl. Merdeka No. 123</p>
+  <hr>
+  <table>
+    <tr><td>Item 1</td><td style="text-align:right;">25.000</td></tr>
+  </table>
+</div>
+```
+
+```javascript
+// Convert to JSON commands
+const jsonCommands = [
+  { type: 'text', text: 'TOKO MAJU JAYA', align: 'center', bold: true, size: 'double', newline: true },
+  { type: 'text', text: 'Jl. Merdeka No. 123', align: 'center', newline: true },
+  { type: 'text', text: '--------------------------------', newline: true },
+  { type: 'text', text: 'Item 1', align: 'left' },
+  { type: 'text', text: '25.000', align: 'right', newline: true },
+  { type: 'cut' }
+];
+
+// Then send via fetch
+fetch('http://127.0.0.1:8080/print', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(jsonCommands)
+});
+```
+
+### 3. Debugging
+
+To view logs for debugging print issues:
+
+```bash
+adb logcat -s PrinterService JsonPrintParser
+```
+
+This will show:
+- Received JSON payload
+- Parsed commands
+- Print status (success/error)
 
 ## 📂 Project Structure
 
@@ -117,10 +226,17 @@ curl -X POST
 │           ├── java/com/rawbtclone
 │           │   ├── MainActivity.kt
 │           │   ├── bluetooth/
-│           │   ├── models/
+│           │   │   ├── BluetoothDiscoveryManager.kt
+│           │   │   ├── PrinterConnection.kt
+│           │   │   └── PrinterManager.kt
 │           │   ├── receivers/
+│           │   │   └── PrintIntentReceiver.kt
 │           │   ├── services/
+│           │   │   └── PrinterService.kt
 │           │   └── utils/
+│           │       ├── EscPosBuilder.kt
+│           │       ├── ImageConverter.kt
+│           │       └── JsonPrintParser.kt
 │           └── res/
 │               ├── layout/
 │               └── values/
