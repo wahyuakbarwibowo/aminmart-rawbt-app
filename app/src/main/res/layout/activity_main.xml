@@ -3,7 +3,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:background="@color/pink_background">
 
     <TextView
         android:id="@+id/tvStatus"
@@ -11,34 +12,52 @@
         android:layout_height="wrap_content"
         android:text="@string/status_disconnected"
         android:textSize="18sp"
-        android:textStyle="bold" />
+        android:textStyle="bold"
+        android:textColor="@color/pink_text_primary" />
 
     <Button
         android:id="@+id/btnScan"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="@string/scan_printer" />
+        android:text="@string/scan_printer"
+        android:backgroundTint="@color/pink_primary"
+        android:textColor="@color/white" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:text="@string/paired_devices"
-        android:textSize="16sp" />
+        android:textSize="16sp"
+        android:textColor="@color/pink_text_secondary" />
 
     <ListView
         android:id="@+id/lvDevices"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_marginTop="8dp" />
+        android:layout_marginTop="8dp"
+        android:background="@color/pink_surface"
+        android:divider="@color/pink_primary_light"
+        android:dividerHeight="1dp" />
 
     <Button
         android:id="@+id/btnTestPrint"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="@string/test_print" />
+        android:text="@string/test_print"
+        android:backgroundTint="@color/pink_accent"
+        android:textColor="@color/white" />
+
+    <Button
+        android:id="@+id/btnStopService"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/stop_service"
+        android:backgroundTint="@color/pink_text_secondary"
+        android:textColor="@color/white" />
 
 </LinearLayout>

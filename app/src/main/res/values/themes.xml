@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Pink Theme for Aminmart RawBT -->
+    <style name="Theme.AminmartRawBT" parent="Theme.AppCompat.Light.DarkActionBar">
+        <!-- Primary brand color -->
+        <item name="colorPrimary">@color/pink_primary</item>
+        <item name="colorPrimaryDark">@color/pink_primary_dark</item>
+        <item name="colorAccent">@color/pink_accent</item>
+        
+        <!-- Background colors -->
+        <item name="android:windowBackground">@color/pink_background</item>
+        <item name="android:colorBackground">@color/pink_background</item>
+    </style>
+    
+    <!-- No ActionBar Pink Theme -->
+    <style name="Theme.AminmartRawBT.NoActionBar" parent="Theme.AminmartRawBT">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+</resources>

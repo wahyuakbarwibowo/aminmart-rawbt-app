@@ -34,6 +34,10 @@ class PrinterManager private constructor(private val context: Context) {
         return sharedPreferences.getString("last_printer_address", null)
     }
 
+    fun clearPrinterAddress() {
+        sharedPreferences.edit().remove("last_printer_address").apply()
+    }
+
     @SuppressLint("MissingPermission")
     suspend fun print(data: ByteArray, callback: (Boolean, String?) -> Unit) {
         val address = getSavedPrinterAddress()
