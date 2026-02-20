@@ -92,7 +92,7 @@ class PrinterService : Service() {
             out.println("Content-Type: application/json")
             out.println("Connection: close")
             out.println()
-            out.println("{"status":"success"}")
+            out.println("{\"status\":\"success\"}")
             out.flush()
             socket.close()
 
@@ -102,6 +102,7 @@ class PrinterService : Service() {
         } catch (e: Exception) {
             Log.e("PrinterService", "Error handling client", e)
         }
+        Unit
     }
 
     private fun printFromJson(json: String) {

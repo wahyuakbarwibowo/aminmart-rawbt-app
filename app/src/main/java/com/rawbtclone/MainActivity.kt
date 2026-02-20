@@ -93,8 +93,7 @@ class MainActivity : AppCompatActivity() {
         val adapter = ArrayAdapter(
             this,
             android.R.layout.simple_list_item_1,
-            devicesList.map { "${it.name ?: "Unknown"}
-${it.address}" }
+            devicesList.map { "${it.name ?: "Unknown"}\n${it.address}" }
         )
         lvDevices.adapter = adapter
     }
