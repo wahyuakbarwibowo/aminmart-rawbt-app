@@ -30,6 +30,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var lvDevices: ListView
     private lateinit var btnScan: Button
     private lateinit var btnTestPrint: Button
+    private lateinit var btnStopService: Button
 
     private var devicesList: List<BluetoothDevice> = emptyList()
 
@@ -44,6 +45,7 @@ class MainActivity : AppCompatActivity() {
         lvDevices = findViewById(R.id.lvDevices)
         btnScan = findViewById(R.id.btnScan)
         btnTestPrint = findViewById(R.id.btnTestPrint)
+        btnStopService = findViewById(R.id.btnStopService)
 
         btnScan.setOnClickListener {
             if (checkPermissions()) {
@@ -55,6 +57,10 @@ class MainActivity : AppCompatActivity() {
 
         btnTestPrint.setOnClickListener {
             testPrint()
+        }
+
+        btnStopService.setOnClickListener {
+            stopPrinterService()
         }
 
         lvDevices.setOnItemClickListener { _, _, position, _ ->
@@ -141,6 +147,20 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun stopPrinterService() {
+        // Clear saved printer address
+        printerManager.clearPrinterAddress()
+        
+        // Stop the service
+        val serviceIntent = Intent(this, PrinterService::class.java)
+        stopService(serviceIntent)
+        
+        // Update status
+        updateStatus()
+        
+        Toast.makeText(this, "Service stopped", Toast.LENGTH_SHORT).show()
     }
 
     private fun checkPermissions(): Boolean {

@@ -7,4 +7,5 @@
     <string name="status_disconnected">Status: Disconnected</string>
     <string name="status_connecting">Status: Connecting...</string>
     <string name="status_connected">Status: Connected</string>
+    <string name="stop_service">Stop Service</string>
 </resources>
