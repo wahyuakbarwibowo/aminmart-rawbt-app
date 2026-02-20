@@ -20,11 +20,24 @@ class EscPosBuilder {
     fun init(): EscPosBuilder {
         bos.write(0x1B)
         bos.write(0x40)
+        // Set character code table to PC850 (supports more special chars)
+        bos.write(0x1B)
+        bos.write(0x74)
+        bos.write(0x02)
         return this
     }
 
     fun text(text: String): EscPosBuilder {
-        bos.write(text.toByteArray(Charsets.ISO_8859_1))
+        // Replace common problematic characters
+        val normalized = text
+            .replace("–", "-")  // en dash
+            .replace("—", "-")  // em dash
+            .replace("™", "(TM)")
+            .replace("®", "(R)")
+            .replace("©", "(C)")
+            .replace("•", "*")
+            .replace("…", "...")
+        bos.write(normalized.toByteArray(Charsets.ISO_8859_1))
         return this
     }
 
