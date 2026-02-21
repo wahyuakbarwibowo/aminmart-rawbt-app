@@ -107,6 +107,13 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
             if (!bluetoothDiscoveryManager.isBluetoothEnabled()) {
+                // Check if we have permission to enable Bluetooth
+                if (!checkPermissions()) {
+                    Toast.makeText(this, "Requesting Bluetooth permissions...", Toast.LENGTH_SHORT).show()
+                    requestPermissions()
+                    return@setOnClickListener
+                }
+
                 val enableIntent = bluetoothDiscoveryManager.getEnableBluetoothIntent()
                 if (enableIntent != null) {
                     bluetoothEnableLauncher.launch(enableIntent)
