@@ -12,7 +12,7 @@ class BluetoothDiscoveryManager(private val context: Context) {
 
     private val bluetoothManager: BluetoothManager =
         context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-    private val bluetoothAdapter: BluetoothAdapter? = bluetoothManager.adapter
+    val bluetoothAdapter: BluetoothAdapter? = bluetoothManager.adapter
 
     fun isBluetoothEnabled(): Boolean {
         return bluetoothAdapter?.isEnabled ?: false

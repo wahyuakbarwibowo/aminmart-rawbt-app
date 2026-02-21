@@ -3,7 +3,11 @@ package com.rawbtclone
 import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothAdapter
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -29,7 +33,10 @@ class MainActivity : AppCompatActivity() {
     ) { result ->
         if (result.resultCode == RESULT_OK) {
             Toast.makeText(this, "Bluetooth enabled", Toast.LENGTH_SHORT).show()
-            refreshDevices()
+            updateStatus()
+            if (checkPermissions()) {
+                updateDeviceList()
+            }
         } else {
             Toast.makeText(this, "Bluetooth enable cancelled", Toast.LENGTH_SHORT).show()
         }
@@ -45,6 +52,30 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnStopService: Button
 
     private var devicesList: List<BluetoothDevice> = emptyList()
+    private lateinit var bluetoothAdapter: BluetoothAdapter
+    private val discoveredDevices = mutableListOf<BluetoothDevice>()
+
+    private val bluetoothReceiver = object : BroadcastReceiver() {
+        @SuppressLint("MissingPermission")
+        override fun onReceive(context: Context?, intent: Intent?) {
+            when (intent?.action) {
+                BluetoothDevice.ACTION_FOUND -> {
+                    val device: BluetoothDevice? =
+                        intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
+                    device?.let {
+                        if (!discoveredDevices.contains(it) && !devicesList.contains(it)) { // Avoid duplicates
+                            discoveredDevices.add(it)
+                            updateDeviceList()
+                        }
+                    }
+                }
+                BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
+                    Toast.makeText(context, "Discovery finished", Toast.LENGTH_SHORT).show()
+                    // Update UI to indicate discovery finished
+                }
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,6 +83,17 @@ class MainActivity : AppCompatActivity() {
 
         bluetoothDiscoveryManager = BluetoothDiscoveryManager(this)
         printerManager = PrinterManager.getInstance(this)
+
+        bluetoothAdapter = bluetoothDiscoveryManager.bluetoothAdapter ?: run {
+            Toast.makeText(this, "Bluetooth not supported on this device", Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
+
+        // Register the BroadcastReceiver
+        val filter = IntentFilter(BluetoothDevice.ACTION_FOUND)
+        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
+        registerReceiver(bluetoothReceiver, filter)
 
         tvStatus = findViewById(R.id.tvStatus)
         lvDevices = findViewById(R.id.lvDevices)
@@ -74,7 +116,14 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
             if (checkPermissions()) {
-                refreshDevices()
+                // Clear previous lists and start discovery
+                devicesList = emptyList()
+                discoveredDevices.clear()
+                updateDeviceList() // Clear the listview
+
+                bluetoothDiscoveryManager.stopDiscovery()
+                bluetoothDiscoveryManager.startDiscovery()
+                Toast.makeText(this, "Scanning for devices...", Toast.LENGTH_SHORT).show()
             } else {
                 requestPermissions()
             }
@@ -97,7 +146,7 @@ class MainActivity : AppCompatActivity() {
 
         updateStatus()
         if (checkPermissions()) {
-            refreshDevices()
+            updateDeviceList()
         }
 
         // Start local HTTP server service
@@ -119,8 +168,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     @SuppressLint("MissingPermission")
-    private fun refreshDevices() {
-        devicesList = bluetoothDiscoveryManager.getPairedDevices()
+    private fun updateDeviceList() {
+        val pairedDevices = bluetoothDiscoveryManager.getPairedDevices()
+        val allDevices = (pairedDevices + discoveredDevices).distinctBy { it.address }
+        
+        devicesList = allDevices
+
         val adapter = ArrayAdapter(
             this,
             android.R.layout.simple_list_item_1,
@@ -230,9 +283,15 @@ class MainActivity : AppCompatActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == 100 && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-            refreshDevices()
+            updateDeviceList()
         } else {
             Toast.makeText(this, "Permissions required for Bluetooth", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(bluetoothReceiver)
+        bluetoothDiscoveryManager.stopDiscovery()
     }
 }
