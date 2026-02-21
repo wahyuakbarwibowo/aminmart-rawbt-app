@@ -128,11 +128,11 @@ class PrinterManager private constructor(private val context: Context) {
             // Common: second byte contains battery info
             val batteryByte = response.getOrElse(1) { 0 }
             val batteryLevel = when {
-                batteryByte == 0x00 -> 100  // Full
-                batteryByte == 0x01 -> 75   // Medium
-                batteryByte == 0x02 -> 50   // Low
-                batteryByte == 0x03 -> 25   // Critical
-                batteryByte in 0..100 -> batteryByte.toInt() // Direct percentage
+                batteryByte.toInt() == 0x00 -> 100  // Full
+                batteryByte.toInt() == 0x01 -> 75   // Medium
+                batteryByte.toInt() == 0x02 -> 50   // Low
+                batteryByte.toInt() == 0x03 -> 25   // Critical
+                batteryByte.toInt() in 0..100 -> batteryByte.toInt() // Direct percentage
                 else -> -1  // Unknown/unsupported
             }
             callback(batteryLevel)
