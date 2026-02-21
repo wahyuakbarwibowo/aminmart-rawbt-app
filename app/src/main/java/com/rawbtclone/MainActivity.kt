@@ -105,43 +105,45 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun testPrint() {
-        val batteryLevel = getBatteryLevel()
-        val data = EscPosBuilder()
-            .init()
-            .align(EscPosBuilder.ALIGN_CENTER)
-            .fontSize(EscPosBuilder.FONT_SIZE_NORMAL)
-            .bold(true)
-            .text("AMINMART RAWBT TEST")
-            .lineBreak()
-            .bold(false)
-            .fontSize(EscPosBuilder.FONT_SIZE_NORMAL)
-            .text("Testing Printer Connection")
-            .lineBreak()
-            .text("Battery: $batteryLevel%")
-            .lineBreak()
-            .align(EscPosBuilder.ALIGN_LEFT)
-            .text("--------------------------------")
-            .lineBreak()
-            .text("Item 1              Rp 10.000")
-            .lineBreak()
-            .text("Item 2              Rp 20.000")
-            .lineBreak()
-            .text("--------------------------------")
-            .lineBreak()
-            .align(EscPosBuilder.ALIGN_RIGHT)
-            .bold(true)
-            .text("TOTAL: Rp 30.000")
-            .lineBreak()
-            .bold(false)
-            .align(EscPosBuilder.ALIGN_CENTER)
-            .lineBreak()
-            .qrCode("https://github.com/wahyu")
-            .lineBreak()
-            .feed(3)
-            .cut()
-            .build()
-
         lifecycleScope.launch {
+            val batteryLevel = getPrinterBatteryLevel()
+            val batteryText = if (batteryLevel >= 0) "Battery: ${batteryLevel}%" else "Battery: N/A"
+            
+            val data = EscPosBuilder()
+                .init()
+                .align(EscPosBuilder.ALIGN_CENTER)
+                .fontSize(EscPosBuilder.FONT_SIZE_NORMAL)
+                .bold(true)
+                .text("AMINMART RAWBT TEST")
+                .lineBreak()
+                .bold(false)
+                .fontSize(EscPosBuilder.FONT_SIZE_NORMAL)
+                .text("Testing Printer Connection")
+                .lineBreak()
+                .text(batteryText)
+                .lineBreak()
+                .align(EscPosBuilder.ALIGN_LEFT)
+                .text("--------------------------------")
+                .lineBreak()
+                .text("Item 1              Rp 10.000")
+                .lineBreak()
+                .text("Item 2              Rp 20.000")
+                .lineBreak()
+                .text("--------------------------------")
+                .lineBreak()
+                .align(EscPosBuilder.ALIGN_RIGHT)
+                .bold(true)
+                .text("TOTAL: Rp 30.000")
+                .lineBreak()
+                .bold(false)
+                .align(EscPosBuilder.ALIGN_CENTER)
+                .lineBreak()
+                .qrCode("https://github.com/wahyu")
+                .lineBreak()
+                .feed(3)
+                .cut()
+                .build()
+
             printerManager.print(data) { success, error ->
                 if (success) {
                     Toast.makeText(this@MainActivity, "Print success", Toast.LENGTH_SHORT).show()
@@ -152,10 +154,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getBatteryLevel(): Int {
-        // Note: This returns device battery level, not printer battery
-        // Printer battery level would require custom ESC/POS commands
-        return 85 // Placeholder value
+    private suspend fun getPrinterBatteryLevel(): Int {
+        var batteryLevel = -1
+        printerManager.getPrinterBatteryLevel { level ->
+            batteryLevel = level
+        }
+        return batteryLevel
     }
 
     private fun stopPrinterService() {
