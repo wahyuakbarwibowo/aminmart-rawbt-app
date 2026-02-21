@@ -127,17 +127,23 @@ class PrinterManager private constructor(private val context: Context) {
 
         if (response != null && response.isNotEmpty()) {
             // Parse battery level from response
-            // Response format varies by manufacturer
-            // Common: second byte contains battery info
-            val batteryByte = response.getOrElse(1) { 0 }
+            // For mobile printers (Eppos, etc.), bit 2 of printer status indicates low battery
+            // Response format: 0xx1xx10b (fixed bits: 0,1,4,7)
+            val statusByte = response.getOrElse(0) { 0 }
+            
+            // Check bit 2: 0 = normal, 1 = low battery (offline due to low battery)
+            val isLowBattery = (statusByte.toInt() and 0x04) != 0
+            
+            // Check bit 3: 0 = online, 1 = offline
+            val isOffline = (statusByte.toInt() and 0x08) != 0
+            
+            // Estimate battery level based on status bits
             val batteryLevel = when {
-                batteryByte.toInt() == 0x00 -> 100  // Full
-                batteryByte.toInt() == 0x01 -> 75   // Medium
-                batteryByte.toInt() == 0x02 -> 50   // Low
-                batteryByte.toInt() == 0x03 -> 25   // Critical
-                batteryByte.toInt() in 0..100 -> batteryByte.toInt() // Direct percentage
-                else -> -1  // Unknown/unsupported
+                isLowBattery -> 15  // Critical low battery
+                isOffline -> 25     // Low battery warning
+                else -> 85          // Normal (assumed)
             }
+            
             val rawHex = response.joinToString(" ") { String.format("%02X", it) }.take(100)
             callback(batteryLevel, rawHex)
         } else {
