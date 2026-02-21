@@ -12,6 +12,7 @@ import android.widget.Button
 import android.widget.ListView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.lifecycleScope
@@ -22,6 +23,17 @@ import com.rawbtclone.utils.EscPosBuilder
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
+
+    private val bluetoothEnableLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            Toast.makeText(this, "Bluetooth enabled", Toast.LENGTH_SHORT).show()
+            refreshDevices()
+        } else {
+            Toast.makeText(this, "Bluetooth enable cancelled", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     private lateinit var bluetoothDiscoveryManager: BluetoothDiscoveryManager
     private lateinit var printerManager: PrinterManager
@@ -48,6 +60,19 @@ class MainActivity : AppCompatActivity() {
         btnStopService = findViewById(R.id.btnStopService)
 
         btnScan.setOnClickListener {
+            if (!bluetoothDiscoveryManager.hasBluetoothHardware()) {
+                Toast.makeText(this, "Bluetooth hardware not available", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            if (!bluetoothDiscoveryManager.isBluetoothEnabled()) {
+                val enableIntent = bluetoothDiscoveryManager.getEnableBluetoothIntent()
+                if (enableIntent != null) {
+                    bluetoothEnableLauncher.launch(enableIntent)
+                } else {
+                    Toast.makeText(this, "Please enable Bluetooth first", Toast.LENGTH_SHORT).show()
+                }
+                return@setOnClickListener
+            }
             if (checkPermissions()) {
                 refreshDevices()
             } else {
