@@ -125,6 +125,8 @@ class PrinterManager private constructor(private val context: Context) {
         
         tempConnection.close()
 
+        Log.d("PrinterBattery", "Raw response: ${response?.joinToString(" ") { String.format("%02X", it) }}")
+
         if (response != null && response.isNotEmpty()) {
             // Parse battery level from response
             // Response format varies by manufacturer
@@ -138,8 +140,10 @@ class PrinterManager private constructor(private val context: Context) {
                 batteryByte.toInt() in 0..100 -> batteryByte.toInt() // Direct percentage
                 else -> -1  // Unknown/unsupported
             }
+            Log.d("PrinterBattery", "Battery byte: 0x${String.format("%02X", batteryByte)}, Level: $batteryLevel%")
             callback(batteryLevel)
         } else {
+            Log.d("PrinterBattery", "No response from printer (unsupported command)")
             callback(-1)  // No response or unsupported command
         }
     }
