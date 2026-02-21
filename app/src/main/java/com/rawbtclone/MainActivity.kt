@@ -12,6 +12,7 @@ import android.widget.Button
 import android.widget.ListView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.lifecycleScope
@@ -23,8 +24,15 @@ import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
-    companion object {
-        private const val REQUEST_ENABLE_BLUETOOTH = 1001
+    private val bluetoothEnableLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            Toast.makeText(this, "Bluetooth enabled", Toast.LENGTH_SHORT).show()
+            refreshDevices()
+        } else {
+            Toast.makeText(this, "Bluetooth enable cancelled", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private lateinit var bluetoothDiscoveryManager: BluetoothDiscoveryManager
@@ -59,7 +67,7 @@ class MainActivity : AppCompatActivity() {
             if (!bluetoothDiscoveryManager.isBluetoothEnabled()) {
                 val enableIntent = bluetoothDiscoveryManager.getEnableBluetoothIntent()
                 if (enableIntent != null) {
-                    startActivityForResult(enableIntent, REQUEST_ENABLE_BLUETOOTH)
+                    bluetoothEnableLauncher.launch(enableIntent)
                 } else {
                     Toast.makeText(this, "Please enable Bluetooth first", Toast.LENGTH_SHORT).show()
                 }
@@ -225,19 +233,6 @@ class MainActivity : AppCompatActivity() {
             refreshDevices()
         } else {
             Toast.makeText(this, "Permissions required for Bluetooth", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_ENABLE_BLUETOOTH) {
-            if (resultCode == RESULT_OK) {
-                Toast.makeText(this, "Bluetooth enabled", Toast.LENGTH_SHORT).show()
-                refreshDevices()
-            } else {
-                Toast.makeText(this, "Bluetooth enable cancelled", Toast.LENGTH_SHORT).show()
-            }
         }
     }
 }
