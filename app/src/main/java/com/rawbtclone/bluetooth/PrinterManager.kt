@@ -3,6 +3,7 @@ package com.rawbtclone.bluetooth
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
@@ -11,8 +12,12 @@ class PrinterManager private constructor(private val context: Context) {
 
     private val sharedPreferences: SharedPreferences =
         context.getSharedPreferences("PrinterPrefs", Context.MODE_PRIVATE)
-    
+
     private var connection: PrinterConnection? = null
+    private val bluetoothAdapter: BluetoothAdapter? by lazy {
+        val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        bluetoothManager.adapter
+    }
 
     companion object {
         @SuppressLint("StaticFieldLeak")
@@ -46,9 +51,8 @@ class PrinterManager private constructor(private val context: Context) {
             return
         }
 
-        val adapter = BluetoothAdapter.getDefaultAdapter()
         val device: BluetoothDevice? = try {
-            adapter.getRemoteDevice(address)
+            bluetoothAdapter?.getRemoteDevice(address)
         } catch (e: Exception) {
             null
         }
@@ -95,9 +99,8 @@ class PrinterManager private constructor(private val context: Context) {
             return
         }
 
-        val adapter = BluetoothAdapter.getDefaultAdapter()
         val device: BluetoothDevice? = try {
-            adapter.getRemoteDevice(address)
+            bluetoothAdapter?.getRemoteDevice(address)
         } catch (e: Exception) {
             null
         }
