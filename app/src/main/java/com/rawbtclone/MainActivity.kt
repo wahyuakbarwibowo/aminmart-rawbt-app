@@ -23,10 +23,6 @@ import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
-    companion object {
-        private const val REQUEST_ENABLE_BLUETOOTH = 1001
-    }
-
     private lateinit var bluetoothDiscoveryManager: BluetoothDiscoveryManager
     private lateinit var printerManager: PrinterManager
     
@@ -52,19 +48,6 @@ class MainActivity : AppCompatActivity() {
         btnStopService = findViewById(R.id.btnStopService)
 
         btnScan.setOnClickListener {
-            if (!bluetoothDiscoveryManager.hasBluetoothHardware()) {
-                Toast.makeText(this, "Bluetooth hardware not available", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            if (!bluetoothDiscoveryManager.isBluetoothEnabled()) {
-                val enableIntent = bluetoothDiscoveryManager.getEnableBluetoothIntent()
-                if (enableIntent != null) {
-                    startActivityForResult(enableIntent, REQUEST_ENABLE_BLUETOOTH)
-                } else {
-                    Toast.makeText(this, "Please enable Bluetooth first", Toast.LENGTH_SHORT).show()
-                }
-                return@setOnClickListener
-            }
             if (checkPermissions()) {
                 refreshDevices()
             } else {
@@ -122,45 +105,40 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun testPrint() {
+        val data = EscPosBuilder()
+            .init()
+            .align(EscPosBuilder.ALIGN_CENTER)
+            .fontSize(EscPosBuilder.FONT_SIZE_NORMAL)
+            .bold(true)
+            .text("AMINMART RAWBT TEST")
+            .lineBreak()
+            .bold(false)
+            .fontSize(EscPosBuilder.FONT_SIZE_NORMAL)
+            .text("Testing Printer Connection")
+            .lineBreak()
+            .align(EscPosBuilder.ALIGN_LEFT)
+            .text("--------------------------------")
+            .lineBreak()
+            .text("Item 1              Rp 10.000")
+            .lineBreak()
+            .text("Item 2              Rp 20.000")
+            .lineBreak()
+            .text("--------------------------------")
+            .lineBreak()
+            .align(EscPosBuilder.ALIGN_RIGHT)
+            .bold(true)
+            .text("TOTAL: Rp 30.000")
+            .lineBreak()
+            .bold(false)
+            .align(EscPosBuilder.ALIGN_CENTER)
+            .lineBreak()
+            .qrCode("https://github.com/wahyu")
+            .lineBreak()
+            .feed(3)
+            .cut()
+            .build()
+
         lifecycleScope.launch {
-            val batteryLevel = getPrinterBatteryLevel()
-            val batteryText = if (batteryLevel >= 0) "Battery: ${batteryLevel}%" else "Battery: N/A"
-
-            val data = EscPosBuilder()
-                .init()
-                .align(EscPosBuilder.ALIGN_CENTER)
-                .fontSize(EscPosBuilder.FONT_SIZE_NORMAL)
-                .bold(true)
-                .text("AMINMART RAWBT TEST")
-                .lineBreak()
-                .bold(false)
-                .fontSize(EscPosBuilder.FONT_SIZE_NORMAL)
-                .text("Testing Printer Connection")
-                .lineBreak()
-                .text(batteryText)
-                .lineBreak()
-                .align(EscPosBuilder.ALIGN_LEFT)
-                .text("--------------------------------")
-                .lineBreak()
-                .text("Item 1              Rp 10.000")
-                .lineBreak()
-                .text("Item 2              Rp 20.000")
-                .lineBreak()
-                .text("--------------------------------")
-                .lineBreak()
-                .align(EscPosBuilder.ALIGN_RIGHT)
-                .bold(true)
-                .text("TOTAL: Rp 30.000")
-                .lineBreak()
-                .bold(false)
-                .align(EscPosBuilder.ALIGN_CENTER)
-                .lineBreak()
-                .qrCode("https://github.com/wahyu")
-                .lineBreak()
-                .feed(3)
-                .cut()
-                .build()
-
             printerManager.print(data) { success, error ->
                 if (success) {
                     Toast.makeText(this@MainActivity, "Print success", Toast.LENGTH_SHORT).show()
@@ -169,14 +147,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-    }
-
-    private suspend fun getPrinterBatteryLevel(): Int {
-        var result = -1
-        printerManager.getPrinterBatteryLevel { level ->
-            result = level
-        }
-        return result
     }
 
     private fun stopPrinterService() {
@@ -240,19 +210,6 @@ class MainActivity : AppCompatActivity() {
             refreshDevices()
         } else {
             Toast.makeText(this, "Permissions required for Bluetooth", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_ENABLE_BLUETOOTH) {
-            if (resultCode == RESULT_OK) {
-                Toast.makeText(this, "Bluetooth enabled", Toast.LENGTH_SHORT).show()
-                refreshDevices()
-            } else {
-                Toast.makeText(this, "Bluetooth enable cancelled", Toast.LENGTH_SHORT).show()
-            }
         }
     }
 }
