@@ -92,10 +92,10 @@ class PrinterManager private constructor(private val context: Context) {
      * Uses DLE EOT (0x10 0x04) command to request printer status.
      * Note: Works on printers that support real-time status transmission.
      */
-    suspend fun getPrinterBatteryLevel(callback: (Int, String?) -> Unit) {
+    suspend fun getPrinterBatteryLevel(callback: (Int) -> Unit) {
         val address = getSavedPrinterAddress()
         if (address == null) {
-            callback(-1, null)
+            callback(-1)
             return
         }
 
@@ -106,7 +106,7 @@ class PrinterManager private constructor(private val context: Context) {
         }
 
         if (device == null) {
-            callback(-1, null)
+            callback(-1)
             return
         }
 
@@ -114,7 +114,7 @@ class PrinterManager private constructor(private val context: Context) {
         val tempConnection = PrinterConnection(device)
         if (!tempConnection.connect()) {
             tempConnection.close()
-            callback(-1, null)
+            callback(-1)
             return
         }
 
@@ -143,11 +143,9 @@ class PrinterManager private constructor(private val context: Context) {
                 isOffline -> 25     // Low battery warning
                 else -> 85          // Normal (assumed)
             }
-            
-            val rawHex = response.joinToString(" ") { String.format("%02X", it) }.take(100)
-            callback(batteryLevel, rawHex)
+            callback(batteryLevel)
         } else {
-            callback(-1, "No response")
+            callback(-1)
         }
     }
 }
