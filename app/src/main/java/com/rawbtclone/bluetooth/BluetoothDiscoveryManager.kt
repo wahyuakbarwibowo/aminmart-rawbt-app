@@ -33,4 +33,12 @@ class BluetoothDiscoveryManager(private val context: Context) {
     fun stopDiscovery() {
         bluetoothAdapter?.cancelDiscovery()
     }
+
+    fun getEnableBluetoothIntent(): Intent? {
+        return bluetoothAdapter?.let { Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE) }
+    }
+
+    fun hasBluetoothHardware(): Boolean {
+        return bluetoothAdapter != null
+    }
 }

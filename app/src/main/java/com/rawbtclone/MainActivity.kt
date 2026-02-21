@@ -23,6 +23,10 @@ import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
+    companion object {
+        private const val REQUEST_ENABLE_BLUETOOTH = 1001
+    }
+
     private lateinit var bluetoothDiscoveryManager: BluetoothDiscoveryManager
     private lateinit var printerManager: PrinterManager
     
@@ -48,6 +52,19 @@ class MainActivity : AppCompatActivity() {
         btnStopService = findViewById(R.id.btnStopService)
 
         btnScan.setOnClickListener {
+            if (!bluetoothDiscoveryManager.hasBluetoothHardware()) {
+                Toast.makeText(this, "Bluetooth hardware not available", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            if (!bluetoothDiscoveryManager.isBluetoothEnabled()) {
+                val enableIntent = bluetoothDiscoveryManager.getEnableBluetoothIntent()
+                if (enableIntent != null) {
+                    startActivityForResult(enableIntent, REQUEST_ENABLE_BLUETOOTH)
+                } else {
+                    Toast.makeText(this, "Please enable Bluetooth first", Toast.LENGTH_SHORT).show()
+                }
+                return@setOnClickListener
+            }
             if (checkPermissions()) {
                 refreshDevices()
             } else {
@@ -208,6 +225,19 @@ class MainActivity : AppCompatActivity() {
             refreshDevices()
         } else {
             Toast.makeText(this, "Permissions required for Bluetooth", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_ENABLE_BLUETOOTH) {
+            if (resultCode == RESULT_OK) {
+                Toast.makeText(this, "Bluetooth enabled", Toast.LENGTH_SHORT).show()
+                refreshDevices()
+            } else {
+                Toast.makeText(this, "Bluetooth enable cancelled", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 }
