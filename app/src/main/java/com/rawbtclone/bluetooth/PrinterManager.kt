@@ -92,10 +92,10 @@ class PrinterManager private constructor(private val context: Context) {
      * Uses DLE EOT (0x10 0x04) command to request printer status.
      * Note: Works on printers that support real-time status transmission.
      */
-    suspend fun getPrinterBatteryLevel(callback: (Int) -> Unit) {
+    suspend fun getPrinterBatteryLevel(callback: (Int, String?) -> Unit) {
         val address = getSavedPrinterAddress()
         if (address == null) {
-            callback(-1)
+            callback(-1, null)
             return
         }
 
@@ -106,7 +106,7 @@ class PrinterManager private constructor(private val context: Context) {
         }
 
         if (device == null) {
-            callback(-1)
+            callback(-1, null)
             return
         }
 
@@ -114,7 +114,7 @@ class PrinterManager private constructor(private val context: Context) {
         val tempConnection = PrinterConnection(device)
         if (!tempConnection.connect()) {
             tempConnection.close()
-            callback(-1)
+            callback(-1, null)
             return
         }
 
@@ -124,8 +124,6 @@ class PrinterManager private constructor(private val context: Context) {
         val response = tempConnection.sendAndReceive(batteryCommand, 1000)
         
         tempConnection.close()
-
-        Log.d("PrinterBattery", "Raw response: ${response?.joinToString(" ") { String.format("%02X", it) }}")
 
         if (response != null && response.isNotEmpty()) {
             // Parse battery level from response
@@ -140,11 +138,10 @@ class PrinterManager private constructor(private val context: Context) {
                 batteryByte.toInt() in 0..100 -> batteryByte.toInt() // Direct percentage
                 else -> -1  // Unknown/unsupported
             }
-            Log.d("PrinterBattery", "Battery byte: 0x${String.format("%02X", batteryByte)}, Level: $batteryLevel%")
-            callback(batteryLevel)
+            val rawHex = response.joinToString(" ") { String.format("%02X", it) }.take(100)
+            callback(batteryLevel, rawHex)
         } else {
-            Log.d("PrinterBattery", "No response from printer (unsupported command)")
-            callback(-1)  // No response or unsupported command
+            callback(-1, "No response")
         }
     }
 }

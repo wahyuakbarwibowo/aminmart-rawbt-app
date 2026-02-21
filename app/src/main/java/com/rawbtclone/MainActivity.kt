@@ -106,60 +106,58 @@ class MainActivity : AppCompatActivity() {
 
     private fun testPrint() {
         lifecycleScope.launch {
-            val batteryLevel = getPrinterBatteryLevel()
-            val batteryText = if (batteryLevel >= 0) "Battery: ${batteryLevel}%" else "Battery: N/A"
-            
-            val data = EscPosBuilder()
-                .init()
-                .align(EscPosBuilder.ALIGN_CENTER)
-                .fontSize(EscPosBuilder.FONT_SIZE_NORMAL)
-                .bold(true)
-                .text("AMINMART RAWBT TEST")
-                .lineBreak()
-                .bold(false)
-                .fontSize(EscPosBuilder.FONT_SIZE_NORMAL)
-                .text("Testing Printer Connection")
-                .lineBreak()
-                .text(batteryText)
-                .lineBreak()
-                .align(EscPosBuilder.ALIGN_LEFT)
-                .text("--------------------------------")
-                .lineBreak()
-                .text("Item 1              Rp 10.000")
-                .lineBreak()
-                .text("Item 2              Rp 20.000")
-                .lineBreak()
-                .text("--------------------------------")
-                .lineBreak()
-                .align(EscPosBuilder.ALIGN_RIGHT)
-                .bold(true)
-                .text("TOTAL: Rp 30.000")
-                .lineBreak()
-                .bold(false)
-                .align(EscPosBuilder.ALIGN_CENTER)
-                .lineBreak()
-                .qrCode("https://github.com/wahyu")
-                .lineBreak()
-                .feed(3)
-                .cut()
-                .build()
+            printerManager.getPrinterBatteryLevel { batteryLevel, rawHex ->
+                val batteryText = if (batteryLevel >= 0) "Battery: ${batteryLevel}%" else "Battery: N/A"
+                val rawText = if (rawHex != null && rawHex != "No response") "RAW: $rawHex" else ""
+                
+                launch {
+                    val data = EscPosBuilder()
+                        .init()
+                        .align(EscPosBuilder.ALIGN_CENTER)
+                        .fontSize(EscPosBuilder.FONT_SIZE_NORMAL)
+                        .bold(true)
+                        .text("AMINMART RAWBT TEST")
+                        .lineBreak()
+                        .bold(false)
+                        .fontSize(EscPosBuilder.FONT_SIZE_NORMAL)
+                        .text("Testing Printer Connection")
+                        .lineBreak()
+                        .text(batteryText)
+                        .lineBreak()
+                        .text(rawText)
+                        .lineBreak()
+                        .align(EscPosBuilder.ALIGN_LEFT)
+                        .text("--------------------------------")
+                        .lineBreak()
+                        .text("Item 1              Rp 10.000")
+                        .lineBreak()
+                        .text("Item 2              Rp 20.000")
+                        .lineBreak()
+                        .text("--------------------------------")
+                        .lineBreak()
+                        .align(EscPosBuilder.ALIGN_RIGHT)
+                        .bold(true)
+                        .text("TOTAL: Rp 30.000")
+                        .lineBreak()
+                        .bold(false)
+                        .align(EscPosBuilder.ALIGN_CENTER)
+                        .lineBreak()
+                        .qrCode("https://github.com/wahyu")
+                        .lineBreak()
+                        .feed(3)
+                        .cut()
+                        .build()
 
-            printerManager.print(data) { success, error ->
-                if (success) {
-                    Toast.makeText(this@MainActivity, "Print success", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this@MainActivity, "Print failed: $error", Toast.LENGTH_LONG).show()
+                    printerManager.print(data) { success, error ->
+                        if (success) {
+                            Toast.makeText(this@MainActivity, "Print success", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(this@MainActivity, "Print failed: $error", Toast.LENGTH_LONG).show()
+                        }
+                    }
                 }
             }
         }
-    }
-
-    private suspend fun getPrinterBatteryLevel(): Int {
-        var batteryLevel = -1
-        printerManager.getPrinterBatteryLevel { level ->
-            batteryLevel = level
-        }
-        return batteryLevel
     }
 
     private fun stopPrinterService() {
