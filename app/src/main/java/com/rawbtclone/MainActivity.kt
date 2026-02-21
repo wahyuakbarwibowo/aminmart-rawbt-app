@@ -105,16 +105,19 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun testPrint() {
+        val batteryLevel = getBatteryLevel()
         val data = EscPosBuilder()
             .init()
             .align(EscPosBuilder.ALIGN_CENTER)
-            .fontSize(EscPosBuilder.FONT_SIZE_DOUBLE)
+            .fontSize(EscPosBuilder.FONT_SIZE_NORMAL)
             .bold(true)
             .text("AMINMART RAWBT TEST")
             .lineBreak()
             .bold(false)
             .fontSize(EscPosBuilder.FONT_SIZE_NORMAL)
             .text("Testing Printer Connection")
+            .lineBreak()
+            .text("Battery: $batteryLevel%")
             .lineBreak()
             .align(EscPosBuilder.ALIGN_LEFT)
             .text("--------------------------------")
@@ -147,6 +150,12 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun getBatteryLevel(): Int {
+        // Note: This returns device battery level, not printer battery
+        // Printer battery level would require custom ESC/POS commands
+        return 85 // Placeholder value
     }
 
     private fun stopPrinterService() {
